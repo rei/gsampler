@@ -2,9 +2,10 @@ package com.rei.stats.gsampler.jdbc
 
 import java.sql.Connection
 import java.sql.DriverManager
-import javax.sql.DataSource
-import java.sql.SQLFeatureNotSupportedException
 import java.sql.SQLException
+import java.sql.SQLFeatureNotSupportedException
+
+import javax.sql.DataSource
 
 class ConnectionFactory implements DataSource {
 
@@ -40,6 +41,11 @@ class ConnectionFactory implements DataSource {
     void setLoginTimeout(int seconds) throws SQLException { throw new UnsupportedOperationException() }
     int getLoginTimeout() throws SQLException { throw new UnsupportedOperationException() }
     java.util.logging.Logger getParentLogger() throws SQLFeatureNotSupportedException { throw new UnsupportedOperationException() }
-    Object unwrap(java.lang.Class<?> iface) throws java.sql.SQLException { throw new UnsupportedOperationException() }
+
+    @Override
+    <T> T unwrap(Class<T> iface) throws SQLException {
+        throw new UnsupportedOperationException()
+    }
+
     boolean isWrapperFor(java.lang.Class<?> iface) throws java.sql.SQLException { throw new UnsupportedOperationException() }
 }

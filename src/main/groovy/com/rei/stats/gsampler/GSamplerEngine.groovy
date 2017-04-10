@@ -1,15 +1,16 @@
 package com.rei.stats.gsampler
 
-import static java.nio.file.StandardWatchEventKinds.*
-import groovy.json.JsonBuilder
-
 import java.nio.file.Files
 import java.nio.file.Path
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
+
+import groovy.json.JsonBuilder
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -20,7 +21,9 @@ import com.rei.stats.gsampler.util.SimpleHttpServer
 
 class GSamplerEngine {
     private static Logger logger = LoggerFactory.getLogger(GSamplerEngine)
-    
+
+    private static final LocalDateTime STARTED = LocalDateTime.now()
+
     private Path configFile;
     private Path dataDir;
     private ScheduledExecutorService executor
@@ -28,16 +31,16 @@ class GSamplerEngine {
     Configuration config
     private SimpleHttpServer server = new SimpleHttpServer(2245)
     private FileWatcher configWatcher
-    private final SamplerStats selfStats = new SamplerStats() 
+    private final SamplerStats selfStats = new SamplerStats()
     final ConcurrentMap<String, Object> errors = new ConcurrentHashMap<>()
-    
+
     GSamplerEngine(Path configFile) {
         this.configFile = configFile;
         this.dataDir = configFile.parent.parent.resolve('data') // configfile/../data
         configWatcher = new FileWatcher(configFile)
     }
     
-    public void start() {
+    void start() {
         reloadConfig(true)
         registerHttpHandlers()
         configWatcher.onModified { reloadConfig(true) }.start()        
@@ -45,7 +48,7 @@ class GSamplerEngine {
         logger.info('sampler engine started!')
     }
     
-    public void test() {
+    void test() {
         reloadConfig(false)
         config.writers = [new ConsoleWriter()]
         
@@ -55,12 +58,13 @@ class GSamplerEngine {
         }
     }
     
-    public void stop() {
+    void stop() {
         configWatcher.shutdown()
         server.stop()
     }
     
     private void registerHttpHandlers() {
+        server.register ('GET', '/') { jsonResponse(getRootData()) }
         server.register ('GET', '/self-stats') { jsonResponse(selfStats) }
         server.register ('GET', '/config') { jsonResponse(getConfigMetadata()) }
         server.register ('GET', '/errors') { jsonResponse(errors) }
@@ -88,7 +92,12 @@ class GSamplerEngine {
         return [samplers: config.samplers.collect { [id: it.id, namePrefix: it.namePrefix, readerClass: it.reader.class.name, interval: it.interval, unit: it.unit] },
                 writers: config.writers.collect { className: it.class.name }]
     }
-    
+
+    private def getRootData() {
+        return [status: "up", started: STARTED.format(DateTimeFormatter.ISO_DATE_TIME),
+                endpoints:['/self-stats', '/config', '/errors']]
+    }
+
     public void printSelfStats() {
         logger.info(selfStats.toString())
     }

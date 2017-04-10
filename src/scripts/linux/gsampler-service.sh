@@ -67,25 +67,6 @@ status() {
     return 3
 }
 
-upgrade() {
-    if [ -n "$VERSION" ]; then
-        pushd $SAMPLER_APP > /dev/null
-        ZIP_NAME="gsampler-$VERSION-dist.zip"
-        wget "$MVN_REPO/com/rei/stats/gsampler/gsampler/$VERSION/$ZIP_NAME"
-        stop
-        rm -r "$SAMPLER_APP/lib.bak"
-        rm -r "$SAMPLER_APP/bin.bak"
-        mv "$SAMPLER_APP/lib" "$SAMPLER_APP/lib.bak"
-        mv "$SAMPLER_APP/bin" "$SAMPLER_APP/bin.bak"
-        unzip $ZIP_NAME
-        rm $ZIP_NAME
-        start
-        return 0
-    fi
-    echo "version to upgrade not specified"
-    return 3
-}
-
 case "$1" in
     start)
 		start

@@ -1,4 +1,7 @@
-import static ch.qos.logback.classic.Level.DEBUG
+import ch.qos.logback.classic.encoder.PatternLayoutEncoder
+import ch.qos.logback.core.ConsoleAppender
+import ch.qos.logback.core.rolling.RollingFileAppender
+import ch.qos.logback.core.rolling.TimeBasedRollingPolicy
 
 appender("FILE", RollingFileAppender) {
   file = "logs/gsampler.log"
@@ -10,4 +13,11 @@ appender("FILE", RollingFileAppender) {
     pattern = "%d [%thread] %-5level %logger{60} - %msg%n"
   }
 }
-root(INFO, ["FILE"])
+
+appender("CONSOLE", ConsoleAppender) {
+    encoder(PatternLayoutEncoder) {
+        pattern = "%d [%thread] %-5level %logger{60} - %msg%n"
+    }
+}
+
+root(INFO, System.properties.appender == 'console' ? ["CONSOLE"] : ["FILE"])

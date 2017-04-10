@@ -1,28 +1,26 @@
 package com.rei.stats.gsampler.jdbc
 
-import groovy.grape.Grape
+import org.eclipse.aether.artifact.Artifact
+import org.eclipse.aether.artifact.DefaultArtifact
+
+import com.rei.aether.Aether
 
 class JdbcDriver {
+    public static final String MVN_REPOS = 'MVN_REPOS'
     String className
-    String groupId
-    String artifactId
-    String version
-    
+    Artifact driverArtifact
+
     JdbcDriver(className, gav) {
         this.className = className
-        def parts = gav.split(':')
-        if (parts.size() != 3) {
-            throw new IllegalArgumentException("GAV ($gav) must be in the format 'group:artifact:version'")
-        }
-        groupId = parts[0]
-        artifactId = parts[1]
-        version = parts[2]
+        driverArtifact = new DefaultArtifact(gav)
     }
     
     void register() {
-        def cl = new GroovyClassLoader()
-        Grape.grab(group: groupId, module: artifactId, version: version, classLoader:cl)
-        ClassLoader.systemClassLoader.addURL(cl.URLs[0])
-        Class.forName(className, true, cl)
+        Aether aether = System.env[MVN_REPOS] ? Aether.builder().addRemoteRepo('repo', MVN_REPOS).setTempLocalRepo().build()
+                                              : Aether.fromMavenSettings()
+
+        aether.resolveDependencies(driverArtifact).each { a -> ClassLoader.systemClassLoader.addURL(a.file.toURI().toURL()) }
+
+        Class.forName(className, true, new GroovyClassLoader())
     }
 }

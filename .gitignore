@@ -1,0 +1,9 @@
+target
+.project
+.settings
+.classpath
+.faces*
+pom.properties
+.idea/
+*.iml
+release.pom

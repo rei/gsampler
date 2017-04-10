@@ -41,7 +41,7 @@ The following global methods are available in a config script:
 	}
 
 	jdbc {
-		// registers a JDBC driver, will download driver jar using Groovy Grapes
+		// registers a JDBC driver, will download driver jar using Aether
 		driver('org.h2.Driver', 'com.h2database:h2:1.1.105')
 
 		// creates a connection factory object which can be passed to any jdbc reader
@@ -66,12 +66,12 @@ The following global methods are available in a config script:
         def idx = index('http://elasticseach:9200')
         def esQueries = ['posts': 'type:apacheAccess AND verb:POST']
 
-		//for 'term' pass null if you are not doing a terms query
+		//for 'term', pass null if you are not doing a terms query
         sampler('es', queries(idx, esQueries, 'term', 5, MINUTES), 'prefix', 5, MINUTES)
     }
 
 	console {
-		// registers a console writer to writer sampled stats to
+		// registers a console writer to write sampled stats to
 	    writer(consoleWriter())
 	}
 

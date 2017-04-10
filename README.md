@@ -80,6 +80,13 @@ The following global methods are available in a config script:
 		writer(graphiteWriter('graphite-host', 2003))
 	}
 
+Docker
+------
+
+The simplest way to run GSampler is with Docker. 
+
+   docker run -v /your/data/dir:/sampler/data -p 2245:2245 reicoop/gsampler
+
 HTTP Interface
 --------------
 

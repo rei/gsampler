@@ -3,48 +3,45 @@ package com.rei.stats.gsampler
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 
-import groovy.json.JsonBuilder
-
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 import com.rei.stats.gsampler.console.ConsoleWriter
 import com.rei.stats.gsampler.util.FileWatcher
-import com.rei.stats.gsampler.util.SimpleHttpServer
 
 class GSamplerEngine {
     private static Logger logger = LoggerFactory.getLogger(GSamplerEngine)
 
-    private static final LocalDateTime STARTED = LocalDateTime.now()
+    public final LocalDateTime started = LocalDateTime.now()
 
-    private Path configFile;
-    private Path dataDir;
+    private Path configFile
+    private Path runsDir
     private ScheduledExecutorService executor
     private ConfigurationLoader configLoader = new ConfigurationLoader()
     Configuration config
-    private SimpleHttpServer server = new SimpleHttpServer(2245)
+
     private FileWatcher configWatcher
-    private final SamplerStats selfStats = new SamplerStats()
+    final SamplerStats selfStats = new SamplerStats()
     final ConcurrentMap<String, Object> errors = new ConcurrentHashMap<>()
+    private GSamplerAdminServer adminServer
 
     GSamplerEngine(Path configFile) {
         this.configFile = configFile;
-        this.dataDir = configFile.parent.parent.resolve('data') // configfile/../data
+        this.runsDir = configFile.parent.parent.resolve('runs') // configfile/../runs
         configWatcher = new FileWatcher(configFile)
     }
     
     void start() {
         reloadConfig(true)
-        registerHttpHandlers()
+        adminServer = new GSamplerAdminServer(this)
+        adminServer.start()
         configWatcher.onModified { reloadConfig(true) }.start()        
-        server.start()
         logger.info('sampler engine started!')
     }
     
@@ -60,45 +57,10 @@ class GSamplerEngine {
     
     void stop() {
         configWatcher.shutdown()
-        server.stop()
-    }
-    
-    private void registerHttpHandlers() {
-        server.register ('GET', '/') { jsonResponse(getRootData()) }
-        server.register ('GET', '/self-stats') { jsonResponse(selfStats) }
-        server.register ('GET', '/config') { jsonResponse(getConfigMetadata()) }
-        server.register ('GET', '/errors') { jsonResponse(errors) }
-        
-        server.register ('POST', '/reload-config') {
-            try {
-                reloadConfig(true)
-                return jsonResponse([success: true])
-            } catch (Exception e) {
-                return jsonResponse([success: false])
-            }
-        }
-        logger.info("registered http handlers")
-    }
-    
-    private def jsonResponse(object) {
-        try {
-            return [contentType: 'application/json', body: new JsonBuilder(object).toString()]
-        } catch (Throwable t) {
-            t.printStackTrace();
-        }
-    }
-    
-    private def getConfigMetadata() {
-        return [samplers: config.samplers.collect { [id: it.id, namePrefix: it.namePrefix, readerClass: it.reader.class.name, interval: it.interval, unit: it.unit] },
-                writers: config.writers.collect { className: it.class.name }]
+        adminServer.stop()
     }
 
-    private def getRootData() {
-        return [status: "up", started: STARTED.format(DateTimeFormatter.ISO_DATE_TIME),
-                endpoints:['/self-stats', '/config', '/errors']]
-    }
-
-    public void printSelfStats() {
+    void printSelfStats() {
         logger.info(selfStats.toString())
     }
     
@@ -174,15 +136,15 @@ class GSamplerEngine {
     }
     
     void recordLastRun(id) {
-        if (!Files.exists(dataDir)) {
-            Files.createDirectory(dataDir) //ensure data dir exists
+        if (!Files.exists(runsDir)) {
+            Files.createDirectory(runsDir) //ensure data dir exists
         }
-        new File(dataDir.toFile(), "${id}.lastRun").text = System.currentTimeMillis() as String
+        new File(runsDir.toFile(), "${id}.lastRun").text = System.currentTimeMillis() as String
         selfStats.lastRan[id] = new Date()
     }
     
     long readLastRun(id) {
-        def f = new File(dataDir.toFile(), "${id}.lastRun")
+        def f = new File(runsDir.toFile(), "${id}.lastRun")
         return f.exists() ? f.text as long : 0
     }
 }

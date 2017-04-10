@@ -1,9 +1,11 @@
-package com.rei.stats.gsampler;
+package com.rei.stats.gsampler
 
-import static org.junit.Assert.*
-import groovy.json.JsonSlurper
+import static org.junit.Assert.assertEquals
+import static org.junit.Assert.assertTrue
 
 import java.util.concurrent.TimeUnit
+
+import groovy.json.JsonSlurper
 
 import org.junit.After
 import org.junit.Before
@@ -60,7 +62,7 @@ class GSamplerEngineTest {
         configFile.text = getScriptText(1)
         
         def sampler = new GSamplerEngine(configFile.toPath())
-        println sampler.dataDir
+        println sampler.runsDir
         sampler.test()
     }
     

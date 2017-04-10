@@ -11,7 +11,7 @@
 	<version>99999-SNAPSHOT</version>
 
     <properties>
-        <sampler.dir>/opt/sampler</sampler.dir>
+        <sampler.dir>/sampler</sampler.dir>
         <docker.java.opts>-Dappender=console</docker.java.opts>
     </properties>
 
@@ -128,17 +128,17 @@
                         <configuration>
                             <imageName>gsampler</imageName>
                             <baseImage>openjdk:8-jre-alpine</baseImage>
-                            <cmd>cd ${sampler.dir} &amp;&amp; java -jar ${docker.java.opts} ${sampler.dir}/${project.build.finalName}.jar</cmd>
+                            <cmd>cd ${sampler.dir}/data &amp;&amp; java -jar ${docker.java.opts} ${sampler.dir}/${project.build.finalName}.jar</cmd>
                             <volumes>
-                                <volume>${sampler.dir}/config</volume>
                                 <volume>${sampler.dir}/data</volume>
                             </volumes>
                             <exposes>
                                 <expose>2245</expose>
                             </exposes>
                             <runs>
-                                <run>mkdir -p ${sampler.dir}/config</run>
-                                <run>touch ${sampler.dir}/config/gsampler.groovy</run>
+                                <run>mkdir -p ${sampler.dir}/data/config</run>
+                                <run>mkdir -p ${sampler.dir}/data/runs</run>
+                                <run>touch ${sampler.dir}/data/config/gsampler.groovy</run>
                             </runs>
 
                             <!-- copy the service's jar file from target into the root directory of the image -->

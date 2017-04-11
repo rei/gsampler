@@ -11,6 +11,8 @@ class ConfigurationLoader {
     private static Logger logger = LoggerFactory.getLogger(ConfigurationLoader)
 
     Configuration loadConfiguration(File file) {
+        logger.info("loading configuration from ${file}")
+
         def extensions = loadExtensions(getClass().classLoader)
         
         Configuration config = new Configuration()

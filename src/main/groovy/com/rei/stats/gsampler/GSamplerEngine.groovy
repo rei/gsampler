@@ -13,35 +13,32 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 import com.rei.stats.gsampler.console.ConsoleWriter
-import com.rei.stats.gsampler.util.FileWatcher
 
 class GSamplerEngine {
     private static Logger logger = LoggerFactory.getLogger(GSamplerEngine)
 
     public final LocalDateTime started = LocalDateTime.now()
-
-    private Path configFile
     private Path runsDir
     private ScheduledExecutorService executor
-    private ConfigurationLoader configLoader = new ConfigurationLoader()
+
     Configuration config
 
-    private FileWatcher configWatcher
     final SamplerStats selfStats = new SamplerStats()
     final ConcurrentMap<String, Object> errors = new ConcurrentHashMap<>()
     private GSamplerAdminServer adminServer
+    private ConfigurationProvider configProvider
 
-    GSamplerEngine(Path configFile) {
-        this.configFile = configFile;
-        this.runsDir = configFile.parent.parent.resolve('runs') // configfile/../runs
-        configWatcher = new FileWatcher(configFile)
+    GSamplerEngine(ConfigurationProvider configProvider, Path homeDir) {
+        this.configProvider = configProvider
+        this.runsDir = homeDir.resolve('runs') // configfile/../runs
+
     }
     
     void start() {
         reloadConfig(true)
         adminServer = new GSamplerAdminServer(this)
         adminServer.start()
-        configWatcher.onModified { reloadConfig(true) }.start()        
+
         logger.info('sampler engine started!')
     }
     
@@ -53,10 +50,14 @@ class GSamplerEngine {
             println "testing sampler ${s.id}:"
             performSampling(s.id, s.namePrefix, s.reader)
         }
+
+        if (selfStats.failedSamples.get() > 0) {
+            throw new IllegalArgumentException("one or more samples failed! " + errors)
+        }
     }
     
     void stop() {
-        configWatcher.shutdown()
+        configProvider.shutdown()
         adminServer.stop()
     }
 
@@ -66,7 +67,7 @@ class GSamplerEngine {
     
     void reloadConfig(boolean schedule) {
         try {
-            config = configLoader.loadConfiguration(configFile.toFile())
+            config = configProvider.loadConfiguration(this)
         } catch (Exception e) {
             logger.error("failed to parse configuration file:", e)
             errors['config'] = [msg: e.message]

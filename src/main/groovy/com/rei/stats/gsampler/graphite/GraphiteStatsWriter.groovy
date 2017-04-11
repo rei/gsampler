@@ -26,13 +26,14 @@ class GraphiteStatsWriter implements StatsWriter {
     }
     
     @Override
-    public void writeStats(Map<String, StatValue> stats) {
+    void writeStats(Map<String, StatValue> stats) {
         def records = stats.collect { n, v -> "${n.replace(' ', '_')} ${v.value} ${v.timestamp.time / 1000 as int}" }
         for (i in 0..(tries-1)) {
             try {
                 lock.lock()
                 graphiteSocket.outputStream << "${queue.join('\n')}\n${records.join('\n')}\n"
                 queue.clear() // sent the data ok, clear the queue
+                return
             } catch (IOException e) {
                 logger.warn("exception writing stats to graphite", e)
                 if (i == tries-1) { //if last try, queue records for next attempt
@@ -51,7 +52,11 @@ class GraphiteStatsWriter implements StatsWriter {
 
     private void connect(String host, int port) {
         if (graphiteSocket != null) {
-            graphiteSocket.close()
+            try {
+                graphiteSocket.close()
+            } catch (IOException e) {
+                logger.warn("error closing graphite socket!", e)
+            }
         }
         
         graphiteSocket = new Socket(host, port)

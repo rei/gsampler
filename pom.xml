@@ -136,7 +136,7 @@
                         <artifactId>docker-maven-plugin</artifactId>
                         <version>0.4.13</version>
                         <configuration>
-                            <imageName>gsampler</imageName>
+                            <imageName>reicoop/gsampler</imageName>
                             <baseImage>openjdk:8-jre-alpine</baseImage>
                             <workdir>${sampler.dir}/data</workdir>
                             <cmd>java -jar ${docker.java.opts} /sampler/${project.build.finalName}.jar</cmd>

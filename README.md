@@ -8,7 +8,7 @@ The following stats readers are supported out of the box:
  * Groovy (inline script or file)
  * JDBC (inline queries or sql file)
  * Exec (execute a system command)
- * ElasticSearch (inline queries)
+ * ElasticSearch (inline queries, tested with ES 5.1)
 
  The following stats writers are supported out of the box:
 

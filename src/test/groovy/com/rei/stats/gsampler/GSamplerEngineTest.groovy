@@ -21,21 +21,21 @@ class GSamplerEngineTest {
     File configFile
     
     @Before
-    public void setup() {
+    void setup() {
         tmp.newFolder('config')
         configFile = tmp.newFile('config/gsampler.groovy')
     }
     
     @After
-    public void cleanup() {
+    void cleanup() {
         sampler?.stop()
     }
     
     @Test
-    public void runSamplerEngine() {
+    void runSamplerEngine() {
         configFile.text = getScriptText(1)
         
-        sampler = new GSamplerEngine(configFile.toPath())
+        sampler = new GSamplerEngine(new FilesystemConfigurationProvider(configFile.toPath()), configFile.parentFile.toPath())
         sampler.start()
         
         def lastReload = sampler.selfStats.lastConfigReload.get()
@@ -51,17 +51,16 @@ class GSamplerEngineTest {
             sleep(10)
         }
         
-        println new URL("http://localhost:${sampler.server.port}/self-stats").text
         sampler.printSelfStats()
         //sleep(60000)
     }
     
     @Test
-    public void testConfig() {
+    void testConfig() {
         def configFile = tmp.newFile()
         configFile.text = getScriptText(1)
         
-        def sampler = new GSamplerEngine(configFile.toPath())
+        def sampler = new GSamplerEngine(new FilesystemConfigurationProvider(configFile.toPath()), configFile.parentFile.toPath())
         println sampler.runsDir
         sampler.test()
     }
@@ -71,17 +70,15 @@ class GSamplerEngineTest {
         configFile.text = '''groovy { sampler('fail-script', scriptText('1/0'), 'fail', 1) }
                              console { writer(consoleWriter()) }'''
         
-         sampler = new GSamplerEngine(configFile.toPath())
+         sampler = new GSamplerEngine(new FilesystemConfigurationProvider(configFile.toPath()), configFile.parentFile.toPath())
          sampler.start()
          
          while (sampler.selfStats.failedSamples.get() == 0) {
             sleep(100)
          }
-         
-         def response = new JsonSlurper().parseText(new URL("http://localhost:${sampler.server.port}/errors").text)
-         println response
-         assertEquals('Division by zero', response['fail-script'].msg)
-    } 
+
+         assertEquals('Division by zero', sampler.errors['fail-script'].msg)
+    }
     
 
     @Test
@@ -89,7 +86,7 @@ class GSamplerEngineTest {
         def configFile = tmp.newFile()
         configFile.text = getScriptText(1)
         
-        def sampler = new GSamplerEngine(configFile.toPath())
+        def sampler = new GSamplerEngine(new FilesystemConfigurationProvider(configFile.toPath()), configFile.parentFile.toPath())
         sampler.start()
         
         def lastReload = sampler.selfStats.lastConfigReload.get()
@@ -113,7 +110,7 @@ class GSamplerEngineTest {
     public void delaysFirstExecution() {
         configFile.text = getScriptText(1)
         
-        sampler = new GSamplerEngine(configFile.toPath())
+        sampler = new GSamplerEngine(new FilesystemConfigurationProvider(configFile.toPath()), configFile.parentFile.toPath())
         sampler.recordLastRun('jdbc')
         sampler.start()
         
@@ -128,7 +125,7 @@ class GSamplerEngineTest {
     
     @Test
     public void calculatesInitialDelay() {
-        def engine = new GSamplerEngine(configFile.toPath())
+        def engine = new GSamplerEngine(new FilesystemConfigurationProvider(configFile.toPath()), configFile.parentFile.toPath())
         def sampler = new Sampler(id:'test', interval: 1, unit: TimeUnit.MINUTES)
         
         assertEquals(0, engine.getInitialDelay(sampler)) // lastRun file yet

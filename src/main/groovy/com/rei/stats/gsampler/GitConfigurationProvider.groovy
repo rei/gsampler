@@ -42,7 +42,11 @@ class GitConfigurationProvider implements ConfigurationProvider {
             def remoteUrl = new URIish(repoUrl)
             if (repo.remoteList().call().find { it.URIs.contains(remoteUrl) }) {
                 logger.info("configuration already checked out, pulling latest")
-                repo.pull().call()
+                try {
+                    repo.pull().call()
+                } catch (Exception e) {
+                    logger.warn("unable to pull latest config, re-using existing configuration", e)
+                }
             } else {
                 logger.info("configuration origin url differs from existing config, deleting...")
                 configDir.deleteDir()

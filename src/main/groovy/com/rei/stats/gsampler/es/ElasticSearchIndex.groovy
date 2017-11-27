@@ -42,102 +42,92 @@ class ElasticSearchIndex {
 	private int doTermQuery(String query, String term, String base, String index, Calendar from, Calendar to, long time) {
 		def http = new HTTPBuilder("$base/$index/_search")
 		def hits = 0
-		 
-		http.request( Method.POST, ContentType.JSON ) { req ->
-			body = [
-  "facets": [
-    "terms": [
-      "terms": [
-        "field": term,
-        "size": 1,
-        "order": "count",
-        "exclude": []
-      ],
-      "facet_filter": [
-        "fquery": [
-          "query": [
-            "filtered": [
-              "query": [
-                "bool": [
-                  "should": [
-                    [
-                      "query_string": [ "query": query ]
-                    ]
-                  ]
-                ]
-              ],
-              "filter": time < 0 ? [:] : [
-                "bool": [
-                  "must": [
-                    [
-                      "range": [
-                        "@timestamp": [
-                          "from": from.time.time,
-                          "to": to.time.time
-                        ]
-                      ]
-                    ]
-                  ]
-                ]
-              ]
-            ]
-          ]
-        ]
-      ]
-    ]
-  ],
-  "size": 0
-]
-		 
-			response.success = { resp, json ->
-				//println resp.status
-				//println "${json.took}"
-				//hits = json.facets.terms.total
-				hits = json.facets.terms.terms[0].count
 
-			}
-		}
+        http.request( Method.POST, ContentType.JSON ) { req ->
+            body =
+                    [
+                            "size" : 0,
+                            "query": [
+                                    "bool": [
+                                            "must": [
+                                                    [
+                                                            "query_string": [
+                                                                    "query"           : query,
+                                                                    "analyze_wildcard": true
+                                                            ]
+                                                    ],
+                                                    [
+                                                            "range": [
+                                                                    "@timestamp": [
+                                                                            "gte"   : from.time.time,
+                                                                            "lte"   : to.time.time,
+                                                                            "format": "epoch_millis"
+                                                                    ]
+                                                            ]
+                                                    ]
+                                            ]
+                                    ]
+                            ],
+                            "aggs" : [
+                                    "1": [
+                                            "terms": [
+                                                    "field": term,
+                                                    "size" : 1,
+                                                    "order": [
+                                                            "_count": "desc"
+                                                    ]
+                                            ]
+                                    ]
+                            ]
+                    ]
+
+            response.success = { resp, json ->
+                //println resp.status
+                //println "${json.took}"
+                //hits = json.facets.terms.total
+                hits = json.aggregations.'1'.buckets[0].doc_count
+
+            }
+        }
 		return hits
 	}
     
     private int doQuery(String query, String base, String index, Calendar from, Calendar to, long time) {
         def http = new HTTPBuilder("$base/$index/_search")
         def hits = 0
-         
+
         http.request( Method.POST, ContentType.JSON ) { req ->
-            body = [
-              "facets": [
-                "0": [
-                  "query": [
-                    "filtered": [
-                      "query": [
-                        "query_string": [ "query": query ]
-                      ],
-                      "filter": time < 0 ? [:] : [
-                        "bool": [
-                          "must": [
-                            [
-                              "range": [
-                                "@timestamp": [
-                                  "from": from.time.time,
-                                  "to": to.time.time
-                                ]
-                              ]
+            body =
+                    [
+                            "size" : 0,
+                            "query": [
+                                    "bool": [
+                                            "must": [
+                                                    [
+                                                            "query_string": [
+                                                                    "query"           : query,
+                                                                    "analyze_wildcard": true
+                                                            ]
+                                                    ],
+                                                    [
+                                                            "range": [
+                                                                    "@timestamp": [
+                                                                            "gte"   : from.time.time,
+                                                                            "lte"   : to.time.time,
+                                                                            "format": "epoch_millis"
+                                                                    ]
+                                                            ]
+                                                    ]
+                                            ]
+                                    ]
                             ]
-                          ]
-                        ]
-                      ]
                     ]
-                  ]
-                ]
-              ],
-              "size": 0
-            ]
-         
+
+
             response.success = { resp, json ->
 //                println resp.status
 //                println "${json.took}"
-                hits = json.facets.'0'.count
+                hits = json.hits.total
             }
         }
         return hits

@@ -7,10 +7,12 @@ import org.codehaus.groovy.control.customizers.ImportCustomizer
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+import com.rei.stats.gsampler.util.EncryptionService
+
 class ConfigurationLoader {
     private static Logger logger = LoggerFactory.getLogger(ConfigurationLoader)
 
-    Configuration loadConfiguration(File file) {
+    Configuration loadConfiguration(File file, EncryptionService encryptionService) {
         logger.info("loading configuration from ${file}")
 
         def extensions = loadExtensions(getClass().classLoader)
@@ -25,6 +27,7 @@ class ConfigurationLoader {
         
         bindings.writer = { StatsWriter writer -> config.writers.add(writer) }
         bindings.globalPrefix = { prefix -> config.globalPrefix = prefix }
+        bindings.decrypt = { enc -> return encryptionService.decrypt(enc) }
         
         try {
             def importCustomizer = new ImportCustomizer().addStaticStars(TimeUnit.class.name)

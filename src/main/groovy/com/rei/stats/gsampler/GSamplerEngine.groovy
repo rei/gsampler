@@ -13,6 +13,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 import com.rei.stats.gsampler.console.ConsoleWriter
+import com.rei.stats.gsampler.util.EncryptionService
 
 class GSamplerEngine {
     private static Logger logger = LoggerFactory.getLogger(GSamplerEngine)
@@ -27,11 +28,12 @@ class GSamplerEngine {
     final ConcurrentMap<String, Object> errors = new ConcurrentHashMap<>()
     private GSamplerAdminServer adminServer
     private ConfigurationProvider configProvider
+    private EncryptionService encryptionService
 
     GSamplerEngine(ConfigurationProvider configProvider, Path homeDir) {
         this.configProvider = configProvider
         this.runsDir = homeDir.resolve('runs') // configfile/../runs
-
+        this.encryptionService = new EncryptionService(homeDir.resolve("key.dat"))
     }
     
     void start() {
@@ -106,6 +108,10 @@ class GSamplerEngine {
             }
             
         }
+    }
+
+    EncryptionService getEncryptionService() {
+        return encryptionService
     }
     
     private void performSampling(id, String namePrefix, StatsReader reader) {

@@ -56,7 +56,7 @@ class GitConfigurationProvider implements ConfigurationProvider {
         } else {
             cloneRepo()
         }
-        return configLoader.loadConfiguration(configDir.resolve(configPath).toFile())
+        return configLoader.loadConfiguration(configDir.resolve(configPath).toFile(), engine.encryptionService)
     }
 
     private void cloneRepo() {

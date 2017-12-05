@@ -7,6 +7,8 @@ import groovy.json.JsonBuilder
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+import com.sun.net.httpserver.HttpExchange
+
 import com.rei.stats.gsampler.util.SimpleHttpServer
 
 class GSamplerAdminServer {
@@ -33,6 +35,9 @@ class GSamplerAdminServer {
         server.register ('GET', '/self-stats') { jsonResponse(engine.selfStats) }
         server.register ('GET', '/config') { jsonResponse(getConfigMetadata()) }
         server.register ('GET', '/errors') { jsonResponse(engine.errors) }
+        server.register ('POST', '/encrypt') { HttpExchange e ->
+            return [body: engine.encryptionService.encrypt(e.getRequestBody().text)]
+        }
 
         server.register ('POST', '/reload-config') {
             try {
@@ -60,6 +65,6 @@ class GSamplerAdminServer {
 
     private getRootData() {
         return [status: "up", started: engine.started.format(DateTimeFormatter.ISO_DATE_TIME),
-                endpoints:['/self-stats', '/config', '/errors']]
+                endpoints:['/self-stats', '/config', '/errors', '/encrypt']]
     }
 }

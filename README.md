@@ -25,6 +25,7 @@ The following global methods are available in a config script:
  * globalPrefix(String) - all stats read are prefixed like this: "${globalPrefix}.${statName}" [default: 'sampler']
  * sampler(id, reader, namePrefix, interval, TimeUnit[default: SECONDS]) - registers a sampler with specified reader, prefix, and interval
  * writer(writer) - registers the specified writer to writer stats
+ * decrypt('<encrypted text>') - decrypts the given string
 
 *Example:*
 
@@ -87,6 +88,15 @@ The simplest way to run GSampler is with Docker.
 
    docker run -v /your/data/dir:/sampler/data -p 2245:2245 reicoop/gsampler
 
+Encryption Support
+------------------
+
+Passwords and any other secret data can be encrypted in the configuration file. 
+
+  1. `POST /encrypt` with plaintext value as the request body
+  2. Pass the response body to the decrypt function in the config file: `decrypt('HspkoY4K8RBtSIMBJR864ACUgDooH16uqbi8r1WjqaDHG9iUs+czog==')`
+
+
 HTTP Interface
 --------------
 
@@ -98,3 +108,4 @@ The following endpoints are exposed by GSampler:
  * GET /config - returns a json version of the parsed configuration that lists the registered samplers/writers
  * GET /errors - any exceptions thrown by a sampler
  * POST /reload-config - forces a configuration reload
+ * POST /encrypt - accepts a request body to encrypt, returns the encrypted value that can be used in `decrypt(...)` method

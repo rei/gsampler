@@ -13,17 +13,19 @@ class GSamplerEngineIT {
     
     GSamplerEngine sampler
     File configFile
-    
+    File homeDir
+
     @Before
     public void setup() {
         tmp.newFolder('config')
+        homeDir = tmp.newFolder('home')
         configFile = tmp.newFile('config/gsampler.groovy')
         configFile.text = getConfig()
     }
     
     @Test
     public void testSamplerEngine() {
-        sampler = new GSamplerEngine(configFile.toPath())
+        sampler = new GSamplerEngine(new FilesystemConfigurationProvider(configFile.toPath()), homeDir.toPath())
         sampler.test()        
     }
     

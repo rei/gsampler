@@ -50,7 +50,7 @@ class SimpleHttpServer {
             try {
                 logger.info ("received http request: ${exchange.requestMethod} ${exchange.requestURI}")
                 if (exchange.requestMethod.equalsIgnoreCase(method)) {
-                    def response = callback()
+                    def response = callback(exchange)
                     exchange.responseHeaders.set('Content-Type', response?.contentType ?: 'text/plain')
                     def bytes = response.body.bytes
                     exchange.sendResponseHeaders(200, bytes.size())

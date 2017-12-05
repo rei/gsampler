@@ -23,7 +23,7 @@ class FilesystemConfigurationProvider implements ConfigurationProvider {
             configWatcher.onModified { engine.reloadConfig(true) }.start()
             configWatcher.start()
         }
-        return configLoader.loadConfiguration(configFile.toFile())
+        return configLoader.loadConfiguration(configFile.toFile(), engine.encryptionService)
     }
 
     @Override

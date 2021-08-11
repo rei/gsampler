@@ -8,7 +8,7 @@ The following stats readers are supported out of the box:
  * Groovy (inline script or file)
  * JDBC (inline queries or sql file)
  * Exec (execute a system command)
- * ElasticSearch (inline queries, tested with ES 5.1)
+ * ElasticSearch (inline queries, current support is for ES 7.x only)
 
  The following stats writers are supported out of the box:
 
@@ -93,8 +93,10 @@ Encryption Support
 
 Passwords and any other secret data can be encrypted in the configuration file. 
 
-  1. `POST /encrypt` with plaintext value as the request body
+  1. To encrypt a value, `POST /encrypt` with plaintext value as the request body
   2. Pass the response body to the decrypt function in the config file: `decrypt('HspkoY4K8RBtSIMBJR864ACUgDooH16uqbi8r1WjqaDHG9iUs+czog==')`
+
+NOTE: The key.dat file in $BASEDIR must be used for this config in the future in able to be able to decrypt the values.
 
 
 HTTP Interface
@@ -109,3 +111,16 @@ The following endpoints are exposed by GSampler:
  * GET /errors - any exceptions thrown by a sampler
  * POST /reload-config - forces a configuration reload
  * POST /encrypt - accepts a request body to encrypt, returns the encrypted value that can be used in `decrypt(...)` method
+
+Getting App Running in Dev Environment
+---------------------------------------
+Last Developed with:
+* Java: 8.0.265-amzn
+* Groovy 2.4.15
+
+If you are going to use an existing config, you need the proper 'key.dat' file
+to decrypt anything encrypted in the config. This goes in $BASEDIR. If you don't have one, a new one is automatically created.
+
+Add the environment variable 'export TEST=true'. This will make the sampler run everything in the config one time without waiting for scheduled times.
+
+The easiest way to setup the config, is to point to it with -c or create a symlink 'config' under $BASEDIR that points to it.

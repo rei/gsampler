@@ -1,31 +1,30 @@
 package com.rei.stats.gsampler.es
 
-import groovy.json.JsonSlurper
+import java.util.concurrent.TimeUnit
+
 import groovyx.net.http.ContentType
 import groovyx.net.http.HTTPBuilder
 import groovyx.net.http.Method
 
-import java.util.concurrent.TimeUnit
-
 class ElasticSearchIndex {
     String baseUrl
     String indexPattern
-    
+
     ElasticSearchIndex(String baseUrl, String indexPattern) {
         this.baseUrl = baseUrl
         this.indexPattern = indexPattern
     }
-    
+
     int executeQuery(String query, String term, long time, TimeUnit unit) {
         def now = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
         def index = now.format(indexPattern)
-        
+
         def from = Calendar.getInstance(TimeZone.getTimeZone("UTC"))
         from.add(Calendar.MILLISECOND, (int)-unit.toMillis(time))
         def fromIndex = from.format(indexPattern)
-        
+
 		int hits
-		
+
 		if(term == null){
 			hits = doQuery(query, baseUrl, index, from, now, time)
 			if (index != fromIndex) {
@@ -92,7 +91,7 @@ class ElasticSearchIndex {
     private int doQuery(String query, String base, String index, Calendar from, Calendar to, long time) {
         def http = new HTTPBuilder("$base/$index/_search")
         def hits = 0
-        def body =
+        http.request( Method.POST, ContentType.JSON ) { req -> body =
         [
             "size" : 0,
             "query": [
@@ -117,7 +116,6 @@ class ElasticSearchIndex {
                 ]
             ]
         ]
-        http.request( Method.GET, ContentType.JSON ) { req -> body
             response.success = { resp, json ->
                 hits = json.hits.total.value
             }

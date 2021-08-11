@@ -1,5 +1,6 @@
 package com.rei.stats.gsampler.es
 
+import groovy.json.JsonSlurper
 import groovyx.net.http.ContentType
 import groovyx.net.http.HTTPBuilder
 import groovyx.net.http.Method
@@ -91,43 +92,36 @@ class ElasticSearchIndex {
         }
 		return hits
 	}
-    
+
     private int doQuery(String query, String base, String index, Calendar from, Calendar to, long time) {
         def http = new HTTPBuilder("$base/$index/_search")
         def hits = 0
-
-        http.request( Method.POST, ContentType.JSON ) { req ->
-            body =
-                    [
-                            "size" : 0,
-                            "query": [
-                                    "bool": [
-                                            "must": [
-                                                    [
-                                                            "query_string": [
-                                                                    "query"           : query,
-                                                                    "analyze_wildcard": true
-                                                            ]
-                                                    ],
-                                                    [
-                                                            "range": [
-                                                                    "@timestamp": [
-                                                                            "gte"   : from.time.time,
-                                                                            "lte"   : to.time.time,
-                                                                            "format": "epoch_millis"
-                                                                    ]
-                                                            ]
-                                                    ]
-                                            ]
-                                    ]
-                            ]
-                    ]
-
-
+        def body = new JsonSlurper().parseText("""
+        {
+            "size": 0,
+            "query": {
+                "bool": {
+                    "must": [{
+                        "query_string": {
+                            "query": "${query}",
+                            "analyze_wildcard": true
+                        }
+                    },
+                    {
+                        "range": {
+                            "@timestamp": {
+                                "gte": ${from.time.time},
+                                "lte": ${to.time.time},
+                                "format": "epoch_millis"
+                            }
+                        }
+                    }]
+                }
+            }
+        }""")
+        http.request( Method.GET, ContentType.JSON ) { req -> body
             response.success = { resp, json ->
-//                println resp.status
-//                println "${json.took}"
-                hits = json.hits.total
+                hits = json.hits.total.value
             }
         }
         return hits

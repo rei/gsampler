@@ -89,11 +89,10 @@ class ElasticSearchIndex {
 	}
 
     private int doQuery(String query, String base, String index, Calendar from, Calendar to, long time) {
-        def http = new HTTPBuilder("$base/$index/_search")
+        def http = new HTTPBuilder("$base/$index/_count")
         def hits = 0
         http.request( Method.POST, ContentType.JSON ) { req -> body =
         [
-            "size" : 0,
             "query": [
                 "bool": [
                     "must": [
@@ -117,7 +116,7 @@ class ElasticSearchIndex {
             ]
         ]
             response.success = { resp, json ->
-                hits = json.hits.total.value
+                hits = json.count
             }
         }
         return hits

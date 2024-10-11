@@ -149,9 +149,26 @@ class GSamplerEngine {
         new File(runsDir.toFile(), "${id}.lastRun").text = System.currentTimeMillis() as String
         selfStats.lastRan[id] = new Date()
     }
-    
+
     long readLastRun(id) {
-        def f = new File(runsDir.toFile(), "${id}.lastRun")
-        return f.exists() ? f.text as long : 0
+        try {
+            def f = new File(runsDir.toFile(), "${id}.lastRun")
+            if (!f.exists() || !f.canRead()) {
+                return 0
+            }
+
+            String content = f.text?.trim()
+            if (!content) {
+                return 0
+            }
+
+            return content as long
+        } catch (NumberFormatException e) {
+            logger.warn("Failed to parse lastRun id: ${id}", e)
+            return 0
+        } catch (IOException e) {
+            logger.error("Failed to read lastRun id: ${id}", e)
+            return 0
+        }
     }
 }

@@ -16,13 +16,21 @@ class JdbcDriver {
         this.className = className
         driverArtifact = new DefaultArtifact(gav)
     }
-    
+
     void register() {
         Aether aether = mvnRepo != null ? Aether.builder().setDefaultRemoteRepo(mvnRepo).setTempLocalRepo().build()
                                         : Aether.fromMavenSettings()
 
-        aether.resolveDependencies(driverArtifact).each { a -> ClassLoader.systemClassLoader.addURL(a.file.toURI().toURL()) }
+        ClassLoader parent = Thread.currentThread().getContextClassLoader() ?: ClassLoader.getSystemClassLoader()
+        GroovyClassLoader gcl = new GroovyClassLoader(parent)
 
-        Class.forName(className, true, new GroovyClassLoader())
+        aether.resolveDependencies(driverArtifact).each { a ->
+            gcl.addURL(a.file.toURI().toURL())
+        }
+
+        Class.forName(className, true, gcl)
+
+
+        Thread.currentThread().setContextClassLoader(gcl)
     }
 }

@@ -1,5 +1,8 @@
 package com.rei.stats.gsampler
 
+import org.eclipse.jgit.transport.CredentialsProvider
+import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider
+
 import static com.rei.stats.gsampler.FilesystemConfigurationProvider.DEFAULT_CONFIG_FILE
 import static com.rei.stats.gsampler.GitConfigurationProvider.DEFAULT_CONFIG_PATH
 
@@ -10,8 +13,8 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class GSamplerMain {
-    private static final Logger logger = LoggerFactory.getLogger(GSamplerMain.class);
-    
+    private static final Logger logger = LoggerFactory.getLogger(GSamplerMain.class)
+
     static void main(String[] args) {
         def cli = new CliBuilder(usage: 'gsampler <options>\n')
         cli.with {
@@ -20,9 +23,9 @@ class GSamplerMain {
             c(longOpt: 'config', args: 1, 'path to config file, relative to working directory or repo root (if config-repo-url set)')
             _(longOpt: 'config-repo-url', args: 1, 'git repo url to config repo')
         }
-        
+
         def options = cli.parse(args)
-        
+
         if(options == null || options.h) {
             cli.usage()
             System.exit(1)
@@ -43,6 +46,16 @@ class GSamplerMain {
     private static ConfigurationProvider getConfigProvider(options, Path configDir) {
         if (options.'config-repo-url' || System.env['CONFIG_REPO_URL']) {
             logger.info("config repo url specified, using GitConfigurationProvider")
+
+            def username = System.getenv("CONFIG_REPO_USERNAME")
+            def password = System.getenv("CONFIG_REPO_PASSWORD")
+            if (username && password) {
+                logger.info("registering JGit credentials provider")
+                CredentialsProvider.setDefault(new UsernamePasswordCredentialsProvider(username, password))
+            } else {
+                logger.warn("CONFIG_REPO_USERNAME or CONFIG_REPO_PASSWORD not set — proceeding without authentication")
+            }
+
             def repoUrl = options.'config-repo-url' ?: System.env['CONFIG_REPO_URL']
             def configPath = options.config || System.env['CONFIG_FILE'] ?
                     (options.config ?: System.env['CONFIG_FILE'])

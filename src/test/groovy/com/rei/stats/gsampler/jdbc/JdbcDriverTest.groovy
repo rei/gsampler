@@ -1,14 +1,15 @@
-package com.rei.stats.gsampler.jdbc;
+package com.rei.stats.gsampler.jdbc
 
 import static org.junit.Assert.*
 
 import org.junit.Test
+import java.sql.DriverManager
 
 class JdbcDriverTest {
 
     @Test
     void canCreateWithValidGAV() {
-        def driver = new JdbcDriver('org.h2.Driver', 'com.h2database:h2:1.1.105', "http://repo1.maven.org/maven2")
+        def driver = new JdbcDriver('org.h2.Driver', 'com.h2database:h2:1.1.105', "https://repo1.maven.org/maven2")
         assertEquals('org.h2.Driver', driver.className)
         assertEquals('com.h2database', driver.driverArtifact.groupId)
         assertEquals('h2', driver.driverArtifact.artifactId)
@@ -17,14 +18,13 @@ class JdbcDriverTest {
 
     @Test
     void canRegisterDriver() {
-        new JdbcDriver('org.h2.Driver', 'com.h2database:h2:1.1.105', "http://repo1.maven.org/maven2").register()
-        println ClassLoader.systemClassLoader.URLs
-        def urls = ClassLoader.systemClassLoader.URLs.collect { it.toString() }
-        assertTrue(urls.any { it.contains('h2database') && it.contains('1.1.105') })
+        new JdbcDriver('org.h2.Driver', 'com.h2database:h2:1.1.105', "https://repo1.maven.org/maven2").register()
+        def drivers = DriverManager.drivers.toList()*.class.name
+        assert drivers.any { it == 'org.h2.Driver' }
     }
-    
+
     @Test(expected=IllegalArgumentException)
     void throwsIllegalArgumentIfInvalidGAV() {
-        new JdbcDriver('foo.bar', 'group:version', "http://repo1.maven.org/maven2")
+        new JdbcDriver('foo.bar', 'group:version', "https://repo1.maven.org/maven2")
     }
 }

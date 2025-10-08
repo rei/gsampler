@@ -63,6 +63,11 @@
 			<version>4.13.1</version>
 			<scope>test</scope>
 		</dependency>
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc11</artifactId>
+            <version>23.9.0.25.07</version>
+        </dependency>
 	</dependencies>
 	<build>
 		<plugins>
@@ -132,43 +137,40 @@
                         </executions>
                     </plugin>
                     <plugin>
-                        <groupId>com.spotify</groupId>
-                        <artifactId>docker-maven-plugin</artifactId>
-                        <version>0.4.13</version>
-                        <configuration>
-                            <imageName>reicoop/gsampler</imageName>
-                            <baseImage>openjdk:8-jre-alpine</baseImage>
-                            <workdir>${sampler.dir}/data</workdir>
-                            <cmd>java -jar ${docker.java.opts} /sampler/${project.build.finalName}.jar</cmd>
-                            <volumes>
-                                <volume>${sampler.dir}/data</volume>
-                            </volumes>
-                            <exposes>
-                                <expose>2245</expose>
-                            </exposes>
-                            <runs>
-                                <run>mkdir -p ${sampler.dir}/data/config</run>
-                                <run>mkdir -p ${sampler.dir}/data/runs</run>
-                                <run>touch ${sampler.dir}/data/config/gsampler.groovy</run>
-                            </runs>
-
-                            <!-- copy the service's jar file from target into the root directory of the image -->
-                            <resources>
-                                <resource>
-                                    <targetPath>${sampler.dir}</targetPath>
-                                    <directory>${project.build.directory}</directory>
-                                    <include>${project.build.finalName}.jar</include>
-                                </resource>
-                            </resources>
-                        </configuration>
+                        <groupId>com.google.cloud.tools</groupId>
+                        <artifactId>jib-maven-plugin</artifactId>
+                        <version>3.4.6</version>
                         <executions>
                             <execution>
+                                <id>build-image</id>
                                 <phase>package</phase>
                                 <goals>
-                                    <goal>build</goal>
+                                    <goal>dockerBuild</goal>
                                 </goals>
                             </execution>
                         </executions>
+                        <configuration>
+                            <from><image>amazoncorretto:21-alpine-jdk</image></from>
+                            <to><image>reicoop/gsampler:${project.version}</image></to>
+                            <container>
+                                <jvmFlags>
+                                    <jvmFlag>-Dappender=console</jvmFlag>
+                                    <jvmFlag>-Dgsampler.http.port=2245</jvmFlag>
+                                </jvmFlags>
+                                <ports><port>2245</port></ports>
+                                <workingDirectory>/sampler/data</workingDirectory>
+                                <volumes><volume>/sampler/data</volume></volumes>
+                            </container>
+                            <extraDirectories>
+                                <paths>
+                                    <path>
+                                        <from>${project.build.directory}</from>
+                                        <into>/sampler</into>
+                                        <includes><include>${project.build.finalName}.jar</include></includes>
+                                    </path>
+                                </paths>
+                            </extraDirectories>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>

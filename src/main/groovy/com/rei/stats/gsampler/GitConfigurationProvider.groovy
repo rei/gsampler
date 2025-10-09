@@ -4,16 +4,12 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 import org.eclipse.jgit.api.Git
-import org.eclipse.jgit.transport.JschConfigSessionFactory
-import org.eclipse.jgit.transport.OpenSshConfig
 import org.eclipse.jgit.transport.URIish
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-import com.jcraft.jsch.Session
-
 class GitConfigurationProvider implements ConfigurationProvider {
-    private static final Logger logger = LoggerFactory.getLogger(GitConfigurationProvider.class);
+    private static final Logger logger = LoggerFactory.getLogger(GitConfigurationProvider.class)
 
     public static final String DEFAULT_CONFIG_PATH = 'gsampler.groovy'
 
@@ -31,19 +27,15 @@ class GitConfigurationProvider implements ConfigurationProvider {
 
     @Override
     Configuration loadConfiguration(GSamplerEngine engine) {
-        JschConfigSessionFactory.setInstance(new JschConfigSessionFactory() {
-            protected void configure(OpenSshConfig.Host hc, Session session) {
-                session.setConfig('StrictHostKeyChecking', 'false')
-            }
-        })
-
         if (Files.exists(configDir.resolve('.git'))) {
             def repo = Git.open(configDir.toFile())
             def remoteUrl = new URIish(repoUrl)
             if (repo.remoteList().call().find { it.URIs.contains(remoteUrl) }) {
                 logger.info("configuration already checked out, pulling latest")
                 try {
-                    repo.pull().call()
+                    repo.pull()
+                            .setCredentialsProvider(CredentialsProvider.getDefault())
+                            .call()
                 } catch (Exception e) {
                     logger.warn("unable to pull latest config, re-using existing configuration", e)
                 }
@@ -61,7 +53,11 @@ class GitConfigurationProvider implements ConfigurationProvider {
 
     private void cloneRepo() {
         logger.info("cloning config from url ${repoUrl}")
-        Git.cloneRepository().setDirectory(configDir.toFile()).setURI(repoUrl).call()
+        Git.cloneRepository()
+                .setDirectory(configDir.toFile())
+                .setURI(repoUrl)
+                .setCredentialsProvider(CredentialsProvider.getDefault())
+                .call()
     }
 
     @Override

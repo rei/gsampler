@@ -115,7 +115,7 @@ The following endpoints are exposed by GSampler:
 Getting App Running in Dev Environment
 ---------------------------------------
 Last Developed with:
-* Java: 8.0.265-amzn
+* Java: 21.0.5-amzn
 * Groovy 2.4.15
 
 If you are going to use an existing config, you need the proper 'key.dat' file
@@ -124,3 +124,19 @@ to decrypt anything encrypted in the config. This goes in $BASEDIR. If you don't
 Add the environment variable 'export TEST=true'. This will make the sampler run everything in the config one time without waiting for scheduled times.
 
 The easiest way to setup the config, is to point to it with -c or create a symlink 'config' under $BASEDIR that points to it.
+
+Once making changes to this repo, run in this directory: `mvn -Pdocker clean package`
+
+Then, to test changes in a local docker container, run in this directory:
+```shell
+docker run --rm --name gsampler \
+  -p 2245:2245 \
+  -v "$PWD/config:/sampler/data/config" \
+  -v "$PWD/key.dat:/sampler/data/key.dat:ro" \
+  -e CONFIG_REPO_URL=https://your-gsampler-config.git \
+  -e CONFIG_REPO_USERNAME=actual-git-username \
+  -e CONFIG_REPO_PASSWORD=actual-git-password \
+  -e TEST=true \
+  -e JAVA_TOOL_OPTIONS="-Dappender=console" \
+  reicoop/gsampler:99999-SNAPSHOT
+```

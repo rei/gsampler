@@ -1,6 +1,4 @@
-package com.rei.stats.gsampler;
-
-import static org.junit.Assert.*
+package com.rei.stats.gsampler
 
 import org.junit.Before
 import org.junit.Rule
@@ -10,39 +8,30 @@ import org.junit.rules.TemporaryFolder
 class GSamplerEngineIT {
     @Rule
     public TemporaryFolder tmp = new TemporaryFolder()
-    
+
     GSamplerEngine sampler
     File configFile
     File homeDir
 
     @Before
-    public void setup() {
+    void setup() {
         tmp.newFolder('config')
         homeDir = tmp.newFolder('home')
         configFile = tmp.newFile('config/gsampler.groovy')
         configFile.text = getConfig()
     }
-    
+
     @Test
-    public void testSamplerEngine() {
+    void testSamplerEngine() {
         sampler = new GSamplerEngine(new FilesystemConfigurationProvider(configFile.toPath()), homeDir.toPath())
-        sampler.test()        
+        sampler.test()
     }
-    
-    def getConfig() {
+
+    static def getConfig() {
         return """
 exec {
       def p = parser(/Average = (\\d+)ms/, 'ping.average')
       sampler('exec', command('ping 127.0.0.1 -n 1', 1000, p), 'net', 1, MINUTES)
-}
-
-elasticsearch {
-    def idx = index('http://cobpels01:9200')
-    def esQueries = ['posts': 'type:apacheAccess AND verb:POST AND urlPath:(-\"/rest/log\" -\"/rest/user/guest/v2.json\")',
-                     'other': 'type:apacheAccess AND verb:POST']    
-
-    sampler('es', queries(idx, esQueries, null, 5, MINUTES), 'prefix', 5, MINUTES)
-	sampler('es1', query(idx, 'topIP.Name', 'type:jbossREI AND message:requestUri* AND !remoteIp:\"127.0.0.1\"', 'remoteIp', 5, MINUTES), 'prefix', 5, MINUTES)
 }
 
 console {

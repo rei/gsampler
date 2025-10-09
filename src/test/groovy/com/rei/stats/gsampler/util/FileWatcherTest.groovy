@@ -1,8 +1,10 @@
-package com.rei.stats.gsampler.util;
+package com.rei.stats.gsampler.util
 
-import static org.junit.Assert.*
-
-import java.util.concurrent.atomic.AtomicLong
+import java.nio.file.Path
+import java.nio.file.Files
+import java.nio.file.StandardOpenOption
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 import org.junit.Rule
 import org.junit.Test
@@ -12,19 +14,29 @@ class FileWatcherTest {
 
     @Rule
     public TemporaryFolder tmp = new TemporaryFolder()
-    
-    @Test(timeout=2000L)
-    public void notifiesCallbackWhenFileChanged() {
-        def f = tmp.newFile()
-        f.text = '0'
-        
-        def notifications = new AtomicLong(0)
-        new FileWatcher(f.toPath()).onModified { notifications.incrementAndGet() }.start();
-        
-        f.text = '1'
-        
-        while (notifications.get() == 0) {
-            sleep(100)
+
+    @Test
+    void notifiesCallbackWhenFileChanged() {
+        Path p = tmp.newFile().toPath()
+        Files.write(p, "0".getBytes("UTF-8"))
+
+        def latch = new CountDownLatch(1)
+        def fw = new FileWatcher(p).onModified { latch.countDown() }
+        try {
+            fw.start()
+            Thread.sleep(100)
+
+            Files.write(
+                    p,
+                    "1".getBytes("UTF-8"),
+                    StandardOpenOption.WRITE,
+                    StandardOpenOption.TRUNCATE_EXISTING,
+                    StandardOpenOption.SYNC
+            )
+
+            assert latch.await(5, TimeUnit.SECONDS) : "modify event not observed"
+        } finally {
+            fw.shutdown()
         }
     }
 
